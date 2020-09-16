@@ -1,12 +1,5 @@
 use LWP::UserAgent;
-use JSON;
-
-# http://perl.mines-albi.fr/perl5.8.5/site_perl/5.8.5/JSON.html
-# According to JSON Grammar, slash (U+002F) is escaped. But by default JSON backend modules encode strings without escaping slash.
-# If $enable is true (or missing), then encode will escape slashes.
-#$json = $json->escape_slash([$enable]);
-            
-            
+use JSON -support_by_pp;           
 use Data::Dumper; 
 
 #Fixing Swarm comment and activity keys that get "version": false, see  https://swarm.perforce.com/jobs/job095670
@@ -138,11 +131,11 @@ while (my $p4KeysComment = <P4KEYSCOMMENTS>)
             # Encode back to a serialised object and print out the p4 counter command to run 
             # (so we are not updating it here, rather outputting the command to run to update the comment key)
             
-            #$json = $json->canonical([$enable])
-            #$json = $json->escape_slash([$enable])
-            # JSON_UNESCAPED_SLASHES
-            
-            $comment_key_encoded_json=encode_json($comment_key_decoded_json);
+            # http://perl.mines-albi.fr/perl5.8.5/site_perl/5.8.5/JSON.html
+            # According to JSON Grammar, slash (U+002F) is escaped. But by default JSON backend modules encode strings without escaping slash.
+            # If $enable is true (or missing), then encode will escape slashes.
+
+            $comment_key_encoded_json=JSON->new->utf8->escape_slash->encode($comment_key_decoded_json);
 
             print "p4 counter -u $commentKeyname \'$comment_key_encoded_json\'\n\n";
         }
@@ -240,7 +233,10 @@ sub checkCommentVersion {
         
         # Encode back to a serialsed object and print out the p4 counter command to run 
         # (so we are not updating it here, rather outputting the command to run tp update the comment key)
-        $comment_key_encoded_json=encode_json($comment_key_decoded_json);
+        #$comment_key_encoded_json=encode_json($comment_key_decoded_json);
+        
+        $comment_key_encoded_json=JSON->new->utf8->escape_slash->encode($comment_key_decoded_json);
+        
         print "p4 counter -u $commentKeyname \'$comment_key_encoded_json\'\n\n";
     }
 }
@@ -289,7 +285,9 @@ sub checkActivityVersion {
         
         # Encode back to a serialsed object and print out the p4 counter command to run 
         # (so we are not updating it here, rather outputting the command to run tp update the comment key)
-        $activity_key_encoded_json=encode_json($activity_key_decoded_json);
+        #$activity_key_encoded_json=encode_json($activity_key_decoded_json);
+        $activity_key_encoded_json=JSON->new->utf8->escape_slash->encode($activity_key_decoded_json);
+
         print "p4 counter -u $activityKeyname \'$activity_key_encoded_json\'\n\n";   
     }
 }
