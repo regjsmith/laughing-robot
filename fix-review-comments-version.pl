@@ -1,5 +1,12 @@
 use LWP::UserAgent;
 use JSON;
+
+# http://perl.mines-albi.fr/perl5.8.5/site_perl/5.8.5/JSON.html
+# According to JSON Grammar, slash (U+002F) is escaped. But by default JSON backend modules encode strings without escaping slash.
+# If $enable is true (or missing), then encode will escape slashes.
+#$json = $json->escape_slash([$enable]);
+            
+            
 use Data::Dumper; 
 
 #Fixing Swarm comment and activity keys that get "version": false, see  https://swarm.perforce.com/jobs/job095670
@@ -107,6 +114,8 @@ while (my $p4KeysComment = <P4KEYSCOMMENTS>)
         my $commentKeyname = substr($p4KeysComment,0,24);
         my $comment_key_json = substr($p4KeysComment,27);
         
+        print "#DEBUG 15 original comment $commentKeyname = $comment_key_json\n"  if $DEBUG;
+        
         # use decode_json witchcraft to make it easier to extract data from json
         my $comment_key_decoded_json = decode_json( $comment_key_json );
 
@@ -127,8 +136,14 @@ while (my $p4KeysComment = <P4KEYSCOMMENTS>)
             $comment_key_decoded_json->{'context'}{'version'} = $correctedCommentVersion;
             
             # Encode back to a serialised object and print out the p4 counter command to run 
-            # (so we are not updating it here, rather outputting the command to run tp update the comment key)
+            # (so we are not updating it here, rather outputting the command to run to update the comment key)
+            
+            #$json = $json->canonical([$enable])
+            #$json = $json->escape_slash([$enable])
+            # JSON_UNESCAPED_SLASHES
+            
             $comment_key_encoded_json=encode_json($comment_key_decoded_json);
+
             print "p4 counter -u $commentKeyname \'$comment_key_encoded_json\'\n\n";
         }
     }
@@ -147,42 +162,42 @@ while (my $p4KeysComment = <P4KEYSCOMMENTS>)
 
 # Reading activity keys from a file where we've put the output of p4 keys into a file 
 # (so can get customer to send it without us needing to have p4 access to their server)
-open(P4KEYSACTIVITIES, $p4KeysActivities) or die "cannot open $p4KeysActivities $!\n";
-while (my $p4KeysActivity = <P4KEYSCOMMENTS>)
-{
-    if($p4KeysActivity =~ /^swarm-activity-/)
-    {
-        # We can cheat here to extract the key name and values since the name is fixed width
-        my $activityKeyname = substr($p4KeysActivity,0,23);
-        my $activity_key_json = substr($p4KeysActivity,28);
+# open(P4KEYSACTIVITIES, $p4KeysActivities) or die "cannot open $p4KeysActivities $!\n";
+# while (my $p4KeysActivity = <P4KEYSCOMMENTS>)
+# {
+    # if($p4KeysActivity =~ /^swarm-activity-/)
+    # {
+        # # We can cheat here to extract the key name and values since the name is fixed width
+        # my $activityKeyname = substr($p4KeysActivity,0,23);
+        # my $activity_key_json = substr($p4KeysActivity,28);
         
-        # use decode_json witchcraft to make it easier to extract data from json
-        my $activity_key_decoded_json = decode_json( $activity_key_json );
+        # # use decode_json witchcraft to make it easier to extract data from json
+        # my $activity_key_decoded_json = decode_json( $activity_key_json );
         
 
-        # Check version key exists and if it's non-integer lookup what review version it is from the time and generate corrected key.
-        if (exists $activity_key_decoded_json->{'context'}{'version'} && $comment_key_decoded_json->{'context'}{'version'} !~ /^[1-9]{1,}$/)  
-        {
-            print "#DEBUG 3 $commentKeyname comment_version is false\n"  if $DEBUG;
+        # # Check version key exists and if it's non-integer lookup what review version it is from the time and generate corrected key.
+        # if (exists $activity_key_decoded_json->{'context'}{'version'} && $comment_key_decoded_json->{'context'}{'version'} !~ /^[1-9]{1,}$/)  
+        # {
+            # print "#DEBUG 3 $commentKeyname comment_version is false\n"  if $DEBUG;
             
-            # Extract the time and review id from the comment key
-            my $commentTime=$comment_key_decoded_json->{'time'};
-            my $reviewID=$comment_key_decoded_json->{'context'}{'review'};
+            # # Extract the time and review id from the comment key
+            # my $commentTime=$comment_key_decoded_json->{'time'};
+            # my $reviewID=$comment_key_decoded_json->{'context'}{'review'};
             
-            # Get the review version the comment time falls into
-            # $ReviewKeysSource is either 'p4' or filename with review keys
-            my $correctedCommentVersion = getReviewVersionByTime($reviewID,$commentTime,$ReviewKeysSource,LAZY);
+            # # Get the review version the comment time falls into
+            # # $ReviewKeysSource is either 'p4' or filename with review keys
+            # my $correctedCommentVersion = getReviewVersionByTime($reviewID,$commentTime,$ReviewKeysSource,LAZY);
             
-            # Update the version in the json object
-            $comment_key_decoded_json->{'context'}{'version'} = $correctedCommentVersion;
+            # # Update the version in the json object
+            # $comment_key_decoded_json->{'context'}{'version'} = $correctedCommentVersion;
             
-            # Encode back to a serialised object and print out the p4 counter command to run 
-            # (so we are not updating it here, rather outputting the command to run tp update the comment key)
-            $comment_key_encoded_json=encode_json($comment_key_decoded_json);
-            print "p4 counter -u $commentKeyname \'$comment_key_encoded_json\'\n\n";
-        }
-    }
-}
+            # # Encode back to a serialised object and print out the p4 counter command to run 
+            # # (so we are not updating it here, rather outputting the command to run tp update the comment key)
+            # $comment_key_encoded_json=encode_json($comment_key_decoded_json);
+            # print "p4 counter -u $commentKeyname \'$comment_key_encoded_json\'\n\n";
+        # }
+    # }
+# }
 
 ###########
 # Functions
