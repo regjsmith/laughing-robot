@@ -13,37 +13,37 @@ There are 2 main points to mention regarding usage:
 
 1. The machine where it is executed will need the "jq" command line processor installed. 
 
-This is open source and can be obtained from  https://jqlang.github.io/jq/ ;
+   This is open source and can be obtained from  https://jqlang.github.io/jq/ ;
 
-The script will check for it and will not continue if it cannot be found.
+   The script will check for it and will not continue if it cannot be found.
 
 2. There is a small section at the top where the user, password and url will need to be edited for curl:
 
-#############################################
-# Site specific values, change as appropriate
-#############################################
-# Swarm url and curl user/password
-swarmUrl="https://reg-swarm-vb"
-curlUser="reg"
-curlPass="reg"
-###########################################
+   #############################################
+   # Site specific values, change as appropriate
+   #############################################
+   # Swarm url and curl user/password
+   swarmUrl="https://reg-swarm-vb"
+   curlUser="reg"
+   curlPass="reg"
+   ###########################################
 
 
-All the output apart from the index commands is preceded with a #. 
-It does not run any of the "p4 index" commands, it prints them to the terminal.
+   All the output apart from the index commands is preceded with a #. 
+   It does not run any of the "p4 index" commands, it prints them to the terminal.
 
-./swarm-reindex-state-fix-open-close-tabs.sh
+   ./swarm-reindex-state-fix-open-close-tabs.sh
 
-# Generating open-reviews.json using api call
-# swarm-review-ffffbf1a id 16613 found in index consistent with open
-# swarm-review-ffffbf1a id 16613 found in index consistent with closed
-# >>>> WARNING: Review  swarm-review-ffffbf1a index has both open and closed states in the index!!
-# Key has state=archived, but index has needsRevision
-# The following commands will delete the index entry
-echo 1308=6e656564735265766973696f6e | p4 index -a 1308 -d swarm-review-ffffbf1a
-# swarm-review-ffffbf20 id 16607 found in index consistent with open
-# swarm-review-ffffbf22 id 16605 found in index consistent with open
-...and so on..
+   # Generating open-reviews.json using api call
+   # swarm-review-ffffbf1a id 16613 found in index consistent with open
+   # swarm-review-ffffbf1a id 16613 found in index consistent with closed
+   # >>>> WARNING: Review  swarm-review-ffffbf1a index has both open and closed states in the index!!
+   # Key has state=archived, but index has needsRevision
+   # The following commands will delete the index entry
+   echo 1308=6e656564735265766973696f6e | p4 index -a 1308 -d swarm-review-ffffbf1a
+   # swarm-review-ffffbf20 id 16607 found in index consistent with open
+   # swarm-review-ffffbf22 id 16605 found in index consistent with open
+   ...and so on..
 
 ###############################################################################
 General notes regarding indexing
@@ -51,39 +51,39 @@ General notes regarding indexing
 
 - Rules for which states will filter to open and closed tabs:
 
- Opened reviews state == (needsReview || needsRevision || approved:isPending)
- Closed reviews state == (approved:notPending || rejected || archived)
+  Opened reviews state == (needsReview || needsRevision || approved:isPending)
+  Closed reviews state == (approved:notPending || rejected || archived)
 
 - Hex encodings and index attributes to use in p4 search queries: 
 
- approved		1308=617070726F766564
- needsReview		1308=6E65656473526576696577
- needsRevision	1308=6e656564735265766973696f6e
- archived		1308=6172636869766564
- rejected		1308=72656a6563746564
+  approved		1308=617070726F766564
+  needsReview		1308=6E65656473526576696577
+  needsRevision	1308=6e656564735265766973696f6e
+  archived		1308=6172636869766564
+  rejected		1308=72656a6563746564
 
- approved:isPending  (1308=617070726F766564 1310=31)
- approved:notPending (1308=617070726F766564 1310=30)
+  approved:isPending  (1308=617070726F766564 1310=31)
+  approved:notPending (1308=617070726F766564 1310=30)
 
 - To find reviews that should appear as closed according to the index, match the following states:
- (approved:notPending || rejected || archived)
+  (approved:notPending || rejected || archived)
 
- ..and reviews that should appear on the open tab according to the index 
- (needsReview || needsRevision || approved:isPending)
+  ..and reviews that should appear on the open tab according to the index 
+  (needsReview || needsRevision || approved:isPending)
 
 
 - Specific p4 search queries to filter reviews for either the open or closed tab.
 
  Open
- needsReview | needsRevision | approved:isPending
- search (1308=6E65656473526576696577 | 1308=6E656564735265766973696F6E | (1308=617070726F766564 1310=31))
+  needsReview | needsRevision | approved:isPending
+  search (1308=6E65656473526576696577 | 1308=6E656564735265766973696F6E | (1308=617070726F766564 1310=31))
 
-Closed
- rejected | archived | approved:notPending
- search (1308=72656a6563746564 | 1308=6172636869766564 | (1308=617070726F766564 1310=30))
+ Closed
+  rejected | archived | approved:notPending
+  search (1308=72656a6563746564 | 1308=6172636869766564 | (1308=617070726F766564 1310=30))
  
- (they should NOT overlap, but that's the point of this script, to find ones that do
- and are appearing in the wrong tab (either in both or the wrong one)
+  (they should NOT overlap, but that's the point of this script, to find ones that do
+  and are appearing in the wrong tab (either in both or the wrong one)
 ###############################################################################
 
 ###COMMENTS###
