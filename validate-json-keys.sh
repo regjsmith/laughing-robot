@@ -20,6 +20,14 @@ if [ $# -eq 0 ]
     exit 2
 fi
 
+# Prerequisite is the jq json command line processor
+# https://jqlang.github.io/jq/
+$(which jq 2>&1>/dev/null)
+if [[ $? > 0 ]] ;then
+        echo "Please install [jq](https://jqlang.github.io/jq/) first." 
+        exit 1
+fi
+
 inputfile=$1
 outputfile=$inputfile.$$
 
