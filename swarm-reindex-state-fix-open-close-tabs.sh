@@ -1,23 +1,113 @@
 #!/usr/bin/bash
 
-# Testing; deliberately break review 16613 (swarm-review-ffffbf1a) to make it aa needsRevision (it is marked as archived in the key)
-echo 6e656564735265766973696f6e | p4 index -a 1308 swarm-review-ffffbf1a
+<<'###COMMENTS###'
 
-# Swarm url and curl user/password 
+swarm-reindex-state-fix-open-close-tabs.sh
+
+Script to cross check review state information held in the index against the state information in the review key. 
+They should agree but if not then reviews can appear in the wrong open or closed tab in the reviews list (either in both or the wrong one)
+If any discrepancies are found it will print out an p4 index command to attempt to correct the index (the assumption is the key is correct) 
+
+There are 2 main points to mention regarding usage:
+
+1. The machine where it is executed will need the "jq" command line processor installed. 
+
+This is open source and can be obtained from  https://jqlang.github.io/jq/ ;
+
+The script will check for it and will not continue if it cannot be found.
+
+2. There is a small section at the top where the user, password and url will need to be edited for curl:
+
+#############################################
+# Site specific values, change as appropriate
+#############################################
+# Swarm url and curl user/password
 swarmUrl="https://reg-swarm-vb"
 curlUser="reg"
 curlPass="reg"
+###########################################
 
-# Speed up grep as per http://www.inmotionhosting.com/support/website/ssh/speed-up-grep-searches-with-lc-all
-GREP(){ LC_ALL=C fgrep "$@";}
 
-# Prerequesite is the jq json command line processor
+All the output apart from the index commands is preceded with a #. 
+It does not run any of the "p4 index" commands, it prints them to the terminal.
+
+./swarm-reindex-state-fix-open-close-tabs.sh
+
+# Generating open-reviews.json using api call
+# swarm-review-ffffbf1a id 16613 found in index consistent with open
+# swarm-review-ffffbf1a id 16613 found in index consistent with closed
+# >>>> WARNING: Review  swarm-review-ffffbf1a index has both open and closed states in the index!!
+# Key has state=archived, but index has needsRevision
+# The following commands will delete the index entry
+echo 1308=6e656564735265766973696f6e | p4 index -a 1308 -d swarm-review-ffffbf1a
+# swarm-review-ffffbf20 id 16607 found in index consistent with open
+# swarm-review-ffffbf22 id 16605 found in index consistent with open
+...and so on..
+
+###############################################################################
+General notes regarding indexing
+###############################################################################
+
+- Rules for which states will filter to open and closed tabs:
+
+ Opened reviews state == (needsReview || needsRevision || approved:isPending)
+ Closed reviews state == (approved:notPending || rejected || archived)
+
+- Hex encodings and index attributes to use in p4 search queries: 
+
+ approved		1308=617070726F766564
+ needsReview		1308=6E65656473526576696577
+ needsRevision	1308=6e656564735265766973696f6e
+ archived		1308=6172636869766564
+ rejected		1308=72656a6563746564
+
+ approved:isPending  (1308=617070726F766564 1310=31)
+ approved:notPending (1308=617070726F766564 1310=30)
+
+- To find reviews that should appear as closed according to the index, match the following states:
+ (approved:notPending || rejected || archived)
+
+ ..and reviews that should appear on the open tab according to the index 
+ (needsReview || needsRevision || approved:isPending)
+
+
+- Specific p4 search queries to filter reviews for either the open or closed tab.
+
+ Open
+ needsReview | needsRevision | approved:isPending
+ search (1308=6E65656473526576696577 | 1308=6E656564735265766973696F6E | (1308=617070726F766564 1310=31))
+
+Closed
+ rejected | archived | approved:notPending
+ search (1308=72656a6563746564 | 1308=6172636869766564 | (1308=617070726F766564 1310=30))
+ 
+ (they should NOT overlap, but that's the point of this script, to find ones that do
+ and are appearing in the wrong tab (either in both or the wrong one)
+###############################################################################
+
+###COMMENTS###
+
+#############################################
+# Site specific values, change as appropriate
+#############################################
+# Swarm url and curl user/password
+swarmUrl="https://reg-swarm-vb"
+curlUser="reg"
+curlPass="reg"
+###########################################
+
+
+# Prerequisite is the jq json command line processor
 # https://jqlang.github.io/jq/
 $(which jq 2>&1>/dev/null) 
 if [[ $? > 0 ]] ;then
        	echo "Please install [jq](https://jqlang.github.io/jq/) first." 
 	exit 1
 fi
+
+# Speed up grep as per
+# http://www.inmotionhosting.com/support/website/ssh/speed-up-grep-searches-with-lc-all
+GREP(){ LC_ALL=C fgrep "$@";}
 
 # Add text colours to make it easier to read the output.
 CLEAR=$'\e[0m'
@@ -32,7 +122,8 @@ echomessage() { echo "${MESSAGE}${1}${CLEAR}";}
 echowarn()    { echo "${WARN}${1}${CLEAR}"   ;}
 echoerror()   { echo "${ERROR}${1}${CLEAR}"  ;}
 
- # p4 search ixtext attributes + hex encodings for review states
+# Set p4 search ixtext attributes + hex encodings for review states as variables 
+# for clarity when defining search queries later
 approved='1308=617070726F766564'
 needsReview='1308=6e65656473526576696577'
 needsRevision='1308=6e656564735265766973696f6e'
@@ -43,54 +134,14 @@ approved_notPending=' (1308=617070726F766564 1310=30)'
 no='30'
 yes='31'
 
-###############################################################################
-# Notes
-###############################################################################
-
-#Rules for which states will filter to open and closed tabs:
-
-# Opened reviews state == (needsReview || needsRevision || approved:isPending)
-# Closed reviews state == (approved:notPending || rejected || archived)
-
-# P4 search queries: 
-
-# approved		1308=617070726F766564
-# needsReview		1308=6E65656473526576696577
-# needsRevision	1308=6e656564735265766973696f6e
-# archived		1308=6172636869766564
-# rejected		1308=72656a6563746564
-
-# approved:isPending  (1308=617070726F766564 1310=31)
-# approved:notPending (1308=617070726F766564 1310=30)
-
-# So, to find review that should appear as closed:
-
-# (approved:notPending || rejected || archived)
-
-# ..but is appearing on open tab, so is one of 
-
-# (needsReview || needsRevision || approved:isPending)
-
-# p4 search queries to filter reviews for either the open or closed tab (they should NOT overlap, but that's the point of this script, to find ones that do
-# and are appearing in the wrong tab (either in both or the wrong one)
-
-# Open
-# needsReview | needsRevision | approved:isPending
-# search (1308=6E65656473526576696577 | 1308=6E656564735265766973696F6E | (1308=617070726F766564 1310=31))
-
-# Closed
-# rejected | archived | approved:notPending
-# search (1308=72656a6563746564 | 1308=6172636869766564 | (1308=617070726F766564 1310=30))
-#
-###############################################################################
 
 ###############################################################################
 # Let the processing begin!
 ###############################################################################
-# Dump list of open reviews into file according to the api (it gets this from the index) if not already created
-# Could check every review but probably faster if we know we are wanting to deal with reviews that are appearing 
-# unexpecdedly on the open tab
-#
+
+# Fetch list of open reviews into file via api call (it gets this from the index)
+# if not already created. Could check every review but probably faster if we know 
+# we are wanting to deal with reviews that are appearing unexpectedly on the open tab
 
 if [[ ! -f open-reviews.json ]] ; then
 
@@ -147,7 +198,8 @@ do
 		# Appearing on open tab, so is one of 
 		# (needsReview || needsRevision || approved:isPending)
 
-		#Check if review is indexed as needsReview
+		#Check if review is in index as needsReview
+
 		if [[ $(p4 search "$needsReview" | GREP $keyReviewName) ]] ; then
 			echowarn "# Key has state=$keyState, but index has needsReview"
 
@@ -157,7 +209,8 @@ do
 
 		fi
 
-		#Check if review is in indexed as needsRevision
+		#Check if review is in index as needsRevision
+
 		if [[ $(p4 search "$needsRevision" | GREP $keyReviewName) ]] ; then 
 			echowarn "# Key has state=$keyState, but index has needsRevision"
 
@@ -166,7 +219,8 @@ do
 			echomessage "echo $needsRevision | p4 index -a 1308 -d $keyReviewName"
 		fi
 
-		#Check if review is in indexed as approved:isPending
+		#Check if review is in index as approved:isPending
+
 		if [[ $(p4 search "($approved_isPending)" | GREP $keyReviewName) ]] ; then
 			echowarn "# Key has pending=$keyPending, but index has approved:isPending"
 
@@ -177,4 +231,3 @@ do
 		fi
 	fi
 done
-
