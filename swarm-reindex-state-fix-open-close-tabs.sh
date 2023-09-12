@@ -3,6 +3,7 @@
 <<'###COMMENTS###'
 
 swarm-reindex-state-fix-open-close-tabs.sh
+https://github.com/regjsmith/laughing-robot/blame/c67c3e3b5c827682a1c93c61e90f44b87cea32c8/swarm-reindex-state-fix-open-close-tabs.sh
 
 Script to cross check review state information held in the index against the state information in the review key. 
 They should agree but if not then reviews can appear in the wrong open or closed tab in the reviews list (either in both or the wrong one)
