@@ -1,2 +1,100 @@
 Testing using git from the command line.
 Examples from https://kbroman.org/github_tutorial/pages/routine.html
+
+History of commands run in teermial on laptop
+
+  250  git -v
+  251  git config --list
+  252  git config 
+  253  cat  .ssh/id_rsa
+  254  ssh-add ~/.ssh/id_rsa
+  255  ll
+  256  cd .ssh
+  257  ll
+  258  cat id_rsa.pub 
+  259  cd
+  260  git config --global regjsmith "Reg Smith"
+  261  git config --global user.name "regjsmith"
+  262  git config --global user.email "reg.smith@talk21.com"
+  263  git config --global color.ui true
+  264  git config --global core.editor=vim
+  265  git config --global core.editor vim
+  266  ssh -T git@github.com
+  267  ls
+  268  mkdir git-test
+  269  cd git-test/
+  270  vi git-testing.txt
+  271  git add git-testing.txt 
+  272  cd ..
+  273  git add git-test/git-testing.txt 
+  274  cat .gitconfig 
+  275  cd -
+  276  git help
+  277  git init
+  278  ls
+  279  git add git-testing.txt 
+  280  git commit
+  281  git push
+  282  git remote add github https://github.com/regjsmith/laughing-robot
+  283  git push
+  284  git push github
+  285  git status
+  286  cat .git/config 
+  287  vim .git/config 
+  288  git push
+  289  git push github
+  290  vim .git/config 
+  291  git push github
+  292  vim .git/config 
+  293  git config user.name
+  294  git config --global user.name
+  295  git config --global user.email
+  296  git push git
+  297  git push github
+  298  git remote set-url origin git@github.com:regjsmith/laughing-robot
+  299  git remote set-url origin git@github.com:regjsmith/laughing-robot.git
+  300  git remoteget-url -all
+  301  git remote get-url -all
+  302  git remote get-url --all
+  303  git remote get-url --all github
+  304  git remote set-url github git@github.com:regjsmith/laughing-robot.git
+  305  git push github
+  306  git remote set-url github git@github.com:regjsmith/laughing-robot
+  307  git push github
+  308  git pull github
+  309  git pull github master
+  310  git config pull.rebase false
+  311  git pull github master
+  312  ls
+  313  git config --global pull.rebase false
+  314  git pull github master
+  315  git config --global pull.ff only
+  316  git pull github master
+  317  git branch -a
+  318  git pull github remotes/github/master
+  319  git remotes --all
+  320  git remote --all
+  321  git push github master
+  322  git pull github master
+  323  git config --global pull.ff delete
+  324  git pull github master
+  325  git config --global pull.ff off
+  326  git pull github master
+  327  git clone github master
+  328  git pull github master
+  329  git pull github 
+  330  git branch
+  331  git config --help
+  332  git config -l
+  333  git config -e
+  334  git pull github master
+  335  git pull github master --allow-unrelated-histories
+  336  ls
+  337  git push
+  338  git push github
+  339  git config branch.master.remote github
+  340  git push 
+  341  git push --set-upstream github master
+  342  git push 
+  343  git pull
+
