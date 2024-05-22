@@ -1,4 +1,31 @@
 #!/usr/bin/bash
+<< 'COMMENT'
+Notes
+Future enhancements for quickly determining latest downloadable version and checking if requested version exists
+
+// In production the latest versions json content comes from
+// https://updates.perforce.com/static/P4V/P4V.json
+
+Defined in //qt/p4v/p24.2/src/gui/web/UpdateWebRequestManager.cpp
+
+List of linux26x86_64 
+
+curl -qs https://updates.perforce.com/static/P4V/P4V.json | jq '.versions[] | select(.platform=="linux26x86_64")'
+
+Example output (truncated):
+
+{"platform": "linux26x86_64",
+  "minor": "4",
+  "major": "2023",
+  "build": "2558838"
+}
+{
+  "platform": "linux26x86_64",
+  "minor": "1",
+  "major": "2024",
+  "build": "2591061"
+}
+COMMENT
 
 # Download and update Linux p4v
 
@@ -11,7 +38,7 @@ if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9] ]]; then
     
     # Notes for later improvements
 
-    # - To get a list of availble versionsin short form run one of these
+    # - To get a list of availble versions in short form run one of these
     #   (the grep  comes out faster according t "time")
     #   curl -s https://ftp.perforce.com/perforce/ | sed -n 's#.* href="r\([1-9][0-9]\.[1-9]\)/.*#\1#p'
     #   curl -s https://ftp.perforce.com/perforce/ | grep -Po '(?<= href="r)[1-9]{2}\.[1-9](?=/)'
