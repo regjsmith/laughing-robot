@@ -47,6 +47,14 @@ if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
     # - To look for p4v.tgz files under any of the returned version numbers, e.g. 24.1 (useful for checking for latest)
     #   curl -s  https://ftp.perforce.com/perforce/r24.1/bin.linux26x86_64/ -o - | grep -Po '(?<= href=")p4v.tgz(?=")'
 
+    # Interactvie select menu
+    # select i in $(echo latest;cat P4V.json) ; do case $i in latest) echo latest;; $i) echo $i ;; esac; done
+    # Output:
+    #1) latest            4) 2017.3.1654916   7) 2018.3.1719707  10) 2019.2.1965058  13) 2020.3.2060285  16) 2021.3.2186916  19) 2022.2.2336701  22) 2023.2.2467475  25) 2024.1.2591061
+    #2) 2017.1.1491634    5) 2018.1.1637591   8) 2018.4.1753667  11) 2020.1.1966006  14) 2021.1.2125979  17) 2021.4.2263543  20) 2022.3.2408367  23) 2023.3.2495381  26) 2024.2.2619912
+    #3) 2017.2.1573260    6) 2018.2.1687764   9) 2019.1.1865170  12) 2020.2.2028073  15) 2021.2.2138880  18) 2022.1.2286077  21) 2023.1.2431464  24) 2023.4.2558838
+
+
     exit
 else
     version=$1
