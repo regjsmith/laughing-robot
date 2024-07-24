@@ -6,12 +6,13 @@
 
 now=$(date)
 
+# Set pipefil so we know if any of the commands in a set of piped commands exits with non-zero status
+set -o pipefail
+
 # Fetch list of availble versions that can be dpwnloaded in local file
 
 if [ -f ./P4V.json ]; then
     mv P4V.json P4V.json.bak
-
-    set -o pipefail
 
     curl -qs https://updates.perforce.com/static/P4V/P4V.json | jq  -r '.versions[] | select(.platform=="linux26x86_64")| .major+"."+.minor+"."+.build' > P4V.json
 
@@ -24,7 +25,7 @@ fi
 # List in file is already sorted with the latest being the last line
 latest=$(tail -1 P4V.json | cut -d. -f1-2 | sed 's/^..//')
 
-# Check the version is supplied as argument in short form like 23.2
+# Check the version is supplied as argument either in full or in short form like 23.2 
 # if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] || ! [[ "$1" == "latest" ]]; then
 if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
     echo "Please provide version in short form like $latest"
@@ -57,13 +58,17 @@ if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
 
     exit
 else
-    version=$1
+    if [[ "$1" == "latest" ]]; then
+        version=$latest
+    else 
+        version=$1
+    fi
 fi
 
 # testing code thus far
 #exit
 
-# Run a command using sudo so it only asks for password at the start and won't
+# Run a command using sudo so it only asks for password at the start and won't 
 # ask again while rest of script runs, default for sudo is to store password for 15 minutes
 
 sudo echo Installing/updating P4V
@@ -79,7 +84,7 @@ fi
 # Look for already downloaded p4v.tgz in current directory, else determine online version
 
 if [ -f ./p4v.tgz ]; then
-    localtarVersion=$(tar -ztf p4v.tgz | head -1 | sed 's#/$##' | cut -d- -f2-)
+    localtarVersion=$(tar -ztf p4v.tgz 2>/dev/null | head -1 | sed 's#/$##' | cut -d- -f2-)
     echo "Found p4v.tgz in current directory for P4V version $localtarVersion, using that for install"
 
     if [ "$localtarVersion" = "$installedVersion" ]; then
@@ -88,10 +93,11 @@ if [ -f ./p4v.tgz ]; then
     fi
 else
     # Check if we already have the same version as availble for download installed.
-    # Download a small amount of the tar file to check version, clumsy (it's a zipped tar file and we only get
+    # Download a small amount of the tar file to check version, clumsy (it's a zipped tar file and we only get 
     # the first 256 bytes and it does give errors about not being valid archive, but seems to work
     # Determine version in tarfile by inspecting first line of tar file listing
 
+    echo "Checking downloadable version.."
     downloadableVersion=$(curl -s -r 0-256 https://ftp.perforce.com/perforce/r$version/bin.linux26x86_64/p4v.tgz -o - | tar -ztf - 2>/dev/null | head -1 | sed 's#/$##' | cut -d- -f2-)
 
     if [[ "$downloadableVersion" = "$installedVersion" ]]; then
@@ -115,14 +121,20 @@ fi
 
 # Untar into /opt/perforce/bin/p4v, saving previous install first if present
 if [ -d /opt/perforce/bin/p4v ]; then
+
         echo Renaming /opt/perforce/bin/p4v to /opt/perforce/bin/p4v_prev
-        sudo mv -f /opt/perforce/bin/p4v /opt/perforce/bin/p4v_prev
+
+        if [ -d /opt/perforce/bin/p4v_prev ]; then
+            sudo rm -rf /opt/perforce/bin/p4v_prev
+        fi
+
+        sudo mv -f /opt/perforce/bin/p4v /opt/perforce/bin/p4v_prev || exit 1 
 fi
 
 sudo mkdir /opt/perforce/bin/p4v
 sudo tar -xvf p4v.tgz -C /opt/perforce/bin/p4v --strip-components=1
 
-# Create or replace link to /usr/local/bin/p4v
+# Create or replace link to /usr/local/bin/p4v 
 if [ -f /usr/local/bin/p4v ]; then
     sudo rm /usr/local/bin/p4v
 fi
