@@ -11,6 +11,7 @@ set -o pipefail
 
 # Fetch list of availble versions that can be dpwnloaded in local file
 
+echo "Fetching list of available versions https://updates.perforce.com/static/P4V/P4V.json"
 curl -qs https://updates.perforce.com/static/P4V/P4V.json | jq  -r '.versions[] | select(.platform=="linux26x86_64")| .major+"."+.minor+"."+.build' > P4V.json
 
 if [ $? -ne 0 ]; then
@@ -19,17 +20,17 @@ if [ $? -ne 0 ]; then
 fi
 
 # List in file is already sorted with the latest being the last line
-latest=$(tail -1 P4V.json)
-latestShortVer=$(echo $latest | cut -d. -f1-2 | sed 's/^..//')
+latestLongVersion=$(tail -1 P4V.json)
+latestShortVersion=$(echo $latestLongVersion | cut -d. -f1-2 | sed 's/^..//')
 
 # Check the version is supplied as argument either in full or in short form like 23.2 
 # if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] || ! [[ "$1" == "latest" ]]; then
 if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
-    echo "Please provide version in short form like $latest or specify \"latest\""
+    echo "Please provide version in short form like $latestShortVersion or specify \"latest\""
     echo ""
     echo "As of $now:"
     echo ""
-    echo " - Latest version is $latest"
+    echo " - Latest version is $latestShortVersion"
     echo " - Currently availble versions are availble for download from https://ftp.perforce.com/perforce/, with an "r" prefix like r23.2"
     echo " - Full list with build numbers extracted from https://updates.perforce.com/static/P4V/P4V.json are as follows:"
     echo ""
@@ -56,9 +57,18 @@ if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
     exit
 else
     if [[ "$1" == "latest" ]]; then
-        version=$latestShortVer
+        shortVersion=$latestShortVersion
     else 
-        version=$1
+        shortVersion=$1
+
+        # Get full version string for backing up any exsting install later
+        longVersion=$(grep --no-filename "^[[:digit:]][[:digit:]]$shortVersion" P4V.json)
+
+        if [ ${#longVersion} -eq 0 ]; then 
+            echo "$shortVersion not availble, available versions are"
+            cat P4V.json | cut -d. -f1-2 | sed 's/^..//'
+            exit
+        fi
     fi
 fi
 
@@ -95,7 +105,7 @@ else
     # Determine version in tarfile by inspecting first line of tar file listing
 
     echo "Checking downloadable version.."
-    downloadableVersion=$(curl -s -r 0-256 https://ftp.perforce.com/perforce/r$version/bin.linux26x86_64/p4v.tgz -o - | tar -ztf - 2>/dev/null | head -1 | sed 's#/$##' | cut -d- -f2-)
+    downloadableVersion=$(curl -s -r 0-256 https://ftp.perforce.com/perforce/r$shortVersion/bin.linux26x86_64/p4v.tgz -o - | tar -ztf - 2>/dev/null | head -1 | sed 's#/$##' | cut -d- -f2-)
 
     if [[ "$downloadableVersion" = "$installedVersion" ]]; then
         echo "Downloadable version P4V $downloadableVersion matches currently installed version ...exiting"
@@ -112,20 +122,20 @@ else
     # Currently hardwired to a particluar version (23.4 below), wonder if there is a /latest link?
 
     echo "Downloading https://ftp.perforce.com/perforce/r$version/bin.linux26x86_64/p4v.tgz"
-    curl https://ftp.perforce.com/perforce/r$version/bin.linux26x86_64/p4v.tgz -o p4v.tgz
+    curl https://ftp.perforce.com/perforce/r$shortVersion/bin.linux26x86_64/p4v.tgz -o p4v.tgz
 
 fi
 
 # Untar into /opt/perforce/bin/p4v, saving previous install first if present
 if [ -d /opt/perforce/bin/p4v ]; then
 
-        echo Renaming /opt/perforce/bin/p4v to /opt/perforce/bin/p4v.$latestShortVer
+        echo Renaming /opt/perforce/bin/p4v to /opt/perforce/bin/p4v.$longVersion
 
-        if [ -d /opt/perforce/bin/p4v.$latestShortVer ]; then
-            sudo rm -rf /opt/perforce/bin/p4v.$latestShortVer || exit 1
+        if [ -d /opt/perforce/bin/p4v.$longVersion ]; then
+            sudo rm -rf /opt/perforce/bin/p4v.$longVersion || exit 1
         fi
 
-        sudo mv -f /opt/perforce/bin/p4v /opt/perforce/bin/p4v.$latestShortVer || exit 1 
+        sudo mv -f /opt/perforce/bin/p4v /opt/perforce/bin/p4v.$longVersion || exit 1 
 fi
 
 sudo mkdir /opt/perforce/bin/p4v
