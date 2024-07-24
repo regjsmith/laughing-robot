@@ -11,25 +11,21 @@ set -o pipefail
 
 # Fetch list of availble versions that can be dpwnloaded in local file
 
-if [ -f ./P4V.json ]; then
-    mv P4V.json P4V.json.bak
+curl -qs https://updates.perforce.com/static/P4V/P4V.json | jq  -r '.versions[] | select(.platform=="linux26x86_64")| .major+"."+.minor+"."+.build' > P4V.json
 
-    curl -qs https://updates.perforce.com/static/P4V/P4V.json | jq  -r '.versions[] | select(.platform=="linux26x86_64")| .major+"."+.minor+"."+.build' > P4V.json
-
-    if [ $? -ne 0 ]; then
-        echo Download of https://updates.perforce.com/static/P4V/P4V.json failed
-        exit 1
-    fi
+if [ $? -ne 0 ]; then
+    echo Download of https://updates.perforce.com/static/P4V/P4V.json failed
+    exit 1
 fi
 
 # List in file is already sorted with the latest being the last line
-latest=$(tail -1 P4V.json | cut -d. -f1-2 | sed 's/^..//')
+latest=$(tail -1 P4V.json)
 latestShortVer=$(echo $latest | cut -d. -f1-2 | sed 's/^..//')
 
 # Check the version is supplied as argument either in full or in short form like 23.2 
 # if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] || ! [[ "$1" == "latest" ]]; then
 if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
-    echo "Please provide version in short form like $latest"
+    echo "Please provide version in short form like $latest or specify \"latest\""
     echo ""
     echo "As of $now:"
     echo ""
