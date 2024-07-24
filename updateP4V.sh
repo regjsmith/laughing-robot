@@ -24,6 +24,7 @@ fi
 
 # List in file is already sorted with the latest being the last line
 latest=$(tail -1 P4V.json | cut -d. -f1-2 | sed 's/^..//')
+latestShortVer=$(echo $latest | cut -d. -f1-2 | sed 's/^..//')
 
 # Check the version is supplied as argument either in full or in short form like 23.2 
 # if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] || ! [[ "$1" == "latest" ]]; then
@@ -59,7 +60,7 @@ if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
     exit
 else
     if [[ "$1" == "latest" ]]; then
-        version=$latest
+        version=$latestShortVer
     else 
         version=$1
     fi
@@ -122,13 +123,13 @@ fi
 # Untar into /opt/perforce/bin/p4v, saving previous install first if present
 if [ -d /opt/perforce/bin/p4v ]; then
 
-        echo Renaming /opt/perforce/bin/p4v to /opt/perforce/bin/p4v_prev
+        echo Renaming /opt/perforce/bin/p4v to /opt/perforce/bin/p4v.$latestShortVer
 
-        if [ -d /opt/perforce/bin/p4v_prev ]; then
-            sudo rm -rf /opt/perforce/bin/p4v_prev
+        if [ -d /opt/perforce/bin/p4v.$latestShortVer ]; then
+            sudo rm -rf /opt/perforce/bin/p4v.$latestShortVer || exit 1
         fi
 
-        sudo mv -f /opt/perforce/bin/p4v /opt/perforce/bin/p4v_prev || exit 1 
+        sudo mv -f /opt/perforce/bin/p4v /opt/perforce/bin/p4v.$latestShortVer || exit 1 
 fi
 
 sudo mkdir /opt/perforce/bin/p4v
