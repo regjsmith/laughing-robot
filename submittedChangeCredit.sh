@@ -73,6 +73,9 @@ SwarmURL="https://reg-swarm-vb"
 
 REVIEWID=$(curl -s -u $USER:$TICKET $SwarmURL/api/v9/reviews?change=$CHANGE | jq '.reviews[].id') 
 
+# Note the use of --argjson below to force the change being passed in to be typed to number
+# https://stackoverflow.com/questions/41772776/numeric-argument-passed-with-jq-arg-not-matching-data-with/41773407#41773407
+
 submitCreditUser=$(curl -s -u $USER:$TICKET $SwarmURL/api/v9/reviews/$REVIEWID | jq -r --argjson c "{\"c\": $CHANGE}" '.review | select(.commits[] == $c.c) | .versions[] | select(.pending==false and .change==$c.c) | .user')
 
 echo $CHANGE associated with review $REVIEWID, submit credit user $submitCreditUser
