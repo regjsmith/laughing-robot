@@ -1,6 +1,18 @@
 #!/usr/bin/bash
 
+#############################################
+# Site specific values, change as appropriate
+#############################################
+# Swarm url and curl user/password
+swarmUrl="https://reg-swarm-vb"
+curlUser="reg"
+curlPass="reg"
+###########################################
+
 <<'###COMMENTS###'
+
+https://github.com/regjsmith/laughing-robot/blob/master/CheckreviewStatesKeytoIndex.sh
+
 Notes: Cross checking review state between review key (assume  this is the actual state) and the index, and if they differ then issue corrective command to fix the index.
 
 1. NOT impemented: For efficiency only run search command once per state (needsReview, needsRevision, approved, archived, approved:iSPending etc.) and out in indivdual files
@@ -100,15 +112,6 @@ General notes regarding indexing
 
 ###COMMENTS###
 
-#############################################
-# Site specific values, change as appropriate
-#############################################
-# Swarm url and curl user/password
-swarmUrl="https://reg-swarm-vb"
-curlUser="reg"
-curlPass="reg"
-###########################################
-
 
 # Prerequisite is the jq json command line processor
 # https://jqlang.github.io/jq/
@@ -156,8 +159,10 @@ yes='31'
 ###############################################################################
 # Loop over list of reviews from the index, one loop per state
 ###############################################################################
-
-for reviewKeyName in $(p4 search "$needsReview")
+for checkState in approved needsReview needsRevision archived rejected
+                  				  
+do
+for reviewKeyName in $(p4 search "${!checkState}")
 do
     #echo "Processing review $reviewKeyName"
 	
@@ -176,20 +181,21 @@ do
 	#echo Index state for $reviewKeyName is needsReview
 	#echo Key   state for $reviewKeyName is $reviewKeyState
 	
-	if [[ "$reviewKeyState" != "needsReview" ]]; then
-        echowarn "# Key for review $reviewKeyName (review $reviewID) has state=$reviewKeyState, but index has needsReview"
+	if [[ "$reviewKeyState" != "$checkState" ]]; then
+        echowarn "# Key for review $reviewKeyName (review $reviewID) has state=$reviewKeyState, but index has $checkState"
 
         # Print p4 index command to delete the index entry
         echomessage "# The following command will delete the index entry"
-        echomessage "echo ${!reviewKeyState} | p4 index -a 1308 -d $reviewKeyName"
+        echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
 	
 	    # Print p4 index command to correct the index entry
         echomessage "# The following commands will correct the index entry"
-        echomessage "echo $needsReview | p4 index -a 1310 $reviewKeyName"
+        echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
     else
 	    echoinfo "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index"
 		
 	fi
+done
 done
 
 
