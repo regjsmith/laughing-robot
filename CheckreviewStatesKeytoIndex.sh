@@ -159,43 +159,42 @@ yes='31'
 ###############################################################################
 # Loop over list of reviews from the index, one loop per state
 ###############################################################################
-for checkState in approved needsReview needsRevision archived rejected
-                  				  
+for checkState in approved needsReview needsRevision archived rejected                				  
 do
-for reviewKeyName in $(p4 search "${!checkState}")
-do
-    #echo "Processing review $reviewKeyName"
-	
-	# calculate review id from key name
-    reviewHexKeyName=$(echo $reviewKeyName | cut -c14-21)
-    reviewID=$(printf "%d" $((0xffffffff - 0x$reviewHexKeyName)))
-    
-	reviewKeyState=$(p4 keys -e "$reviewKeyName" | cut -d= -f2- | jq -r '.state')
-	
-	if [[ -z $reviewKeyState ]]
-	then
-	    echowarn "# No state found for key $reviewKeyName (review $reviewID), moving on to next review"
-		continue
-	fi
-	
-	#echo Index state for $reviewKeyName is needsReview
-	#echo Key   state for $reviewKeyName is $reviewKeyState
-	
-	if [[ "$reviewKeyState" != "$checkState" ]]; then
-        echowarn "# Key for review $reviewKeyName (review $reviewID) has state=$reviewKeyState, but index has $checkState"
-
-        # Print p4 index command to delete the index entry
-        echomessage "# The following command will delete the index entry"
-        echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
-	
-	    # Print p4 index command to correct the index entry
-        echomessage "# The following commands will correct the index entry"
-        echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
-    else
-	    echoinfo "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index"
+	for reviewKeyName in $(p4 search "${!checkState}")
+	do
+		#echo "Processing review $reviewKeyName"
 		
-	fi
-done
+		# calculate review id from key name
+		reviewHexKeyName=$(echo $reviewKeyName | cut -c14-21)
+		reviewID=$(printf "%d" $((0xffffffff - 0x$reviewHexKeyName)))
+		
+		reviewKeyState=$(p4 keys -e "$reviewKeyName" | cut -d= -f2- | jq -r '.state')
+		
+		if [[ -z $reviewKeyState ]]
+		then
+			echowarn "# No state found for key $reviewKeyName (review $reviewID), moving on to next review"
+			continue
+		fi
+		
+		#echo Index state for $reviewKeyName is needsReview
+		#echo Key   state for $reviewKeyName is $reviewKeyState
+		
+		if [[ "$reviewKeyState" != "$checkState" ]]; then
+			echowarn "# Key for review $reviewKeyName (review $reviewID) has state=$reviewKeyState, but index has $checkState"
+	
+			# Print p4 index command to delete the index entry
+			echomessage "# The following command will delete the index entry"
+			echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
+		
+			# Print p4 index command to correct the index entry
+			echomessage "# The following commands will correct the index entry"
+			echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
+		else
+			echoinfo "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index"
+			
+		fi
+	done
 done
 
 
