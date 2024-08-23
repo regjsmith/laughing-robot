@@ -1,3 +1,4 @@
+
 #!/usr/bin/bash
 
 # Reg Smith
@@ -132,6 +133,7 @@ done
 for checkState in approved needsReview needsRevision archived rejected
 do
         summary_count=count_index_summary_$checkState
-        echo -e "Number of $checkState indexes processed \t ${!summary_count}"
+        #echo -e "Number of $checkState indexes processed  ${!summary_count}"
+        printf '%-45s: %s\n' "Number of $checkState indexes processed "  "${!summary_count}"
 
 done
