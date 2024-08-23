@@ -74,11 +74,19 @@ yes='31'
 ###############################################################################
 for checkState in approved needsReview needsRevision archived rejected
 do
+        # Keep a count of how many indexs we check for a status outptu at the end
+        running_count=count_index_$checkState
+
+        # Verbose output if opted for
         if [[ -n $verbose ]]; then echo info "# Checking state=$checkState indexes" ;fi
+
 
         # Using bash variable indirection to expand ${!checkState} to specific search attribute variable defined above
         for reviewKeyName in $(p4 search "${!checkState}")
         do
+            ((++running_count))
+            # echo index counter for $checkState $running_count
+
                 # Calculate review id from key name to include in output for information (not needed in commands)
                 reviewHexKeyName=$(echo $reviewKeyName | cut -c14-21)
                 reviewID=$(printf "%d" $((0xffffffff - 0x$reviewHexKeyName)))
@@ -99,7 +107,7 @@ do
                         continue
                 fi
 
-        # If review key state is different from the state stored in the index, generate commands to fix the index
+                # If review key state is different from the state stored in the index, generate commands to fix the index
                 if [[ "$reviewKeyState" != "$checkState" ]]; then
 
                         echowarn "# Key for review $reviewKeyName (review $reviewID) has state=$reviewKeyState, but index has $checkState"
@@ -116,4 +124,14 @@ do
 
                 fi
         done
+        declare count_index_summary_$checkState=$running_count
+done
+
+
+# Output stats of number of records processed
+for checkState in approved needsReview needsRevision archived rejected
+do
+        summary_count=count_index_summary_$checkState
+        echo -e "Number of $checkState indexes processed \t ${!summary_count}"
+
 done
