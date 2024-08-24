@@ -31,11 +31,15 @@ if [[ $? > 0 ]] ;then
         exit 1
 fi
 
-# Options: currently have implemented -v option
-while getopts "v" OPTION; do
+# Options: currently have implemented -v (verbose) and -q (quiet) options
+while getopts "vq" OPTION; do
      case $OPTION in
      v)
          verbose=1
+      shift
+         ;;
+     q)
+         quiet=1
       shift
          ;;
      esac
@@ -75,18 +79,16 @@ yes='31'
 ###############################################################################
 for checkState in approved needsReview needsRevision archived rejected
 do
-        # Keep a count of how many indexs we check for a status outptu at the end
+        # Keep a count of how many indexes we checked for a status output at the end
         running_count=count_index_$checkState
 
-        # Verbose output if opted for
-        if [[ -n $verbose ]]; then echo info "# Checking state=$checkState indexes" ;fi
-
+        echo -n "# Checking indexes for state=$checkState"
 
         # Using bash variable indirection to expand ${!checkState} to specific search attribute variable defined above
         for reviewKeyName in $(p4 search "${!checkState}")
         do
             ((++running_count))
-            # echo index counter for $checkState $running_count
+            echo -n "."
 
                 # Calculate review id from key name to include in output for information (not needed in commands)
                 reviewHexKeyName=$(echo $reviewKeyName | cut -c14-21)
@@ -121,7 +123,8 @@ do
                         echomessage "# The following commands will correct the index entry"
                         echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
                 else
-                        if  [[ -n $verbose ]]; then echo info "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
+                        # Verbose output if opted for
+                        if  [[ -n $verbose ]]; then echoinfo "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
 
                 fi
         done
