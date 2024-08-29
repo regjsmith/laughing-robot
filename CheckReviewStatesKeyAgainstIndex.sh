@@ -82,14 +82,6 @@ echomessage() { echo "${MESSAGE}${1}${CLEAR}" | tee -a $log ;} # Green text
 echowarn()    { echo "${WARN}${1}${CLEAR}"    | tee -a $log ;} # Red text
 echoerror()   { echo "${ERROR}${1}${CLEAR}"   | tee -a $log ;} # Red block text
 
-
-echoinfo "echoinfo"
-echomessage "echomessage"
-echowarn "echowarm"
-echoerror "echoerror"
-
-exit
-
 # Set p4 search ixtext attributes + hex encodings for review states as variables
 # for clarity when defining search queries later
 approved='1308=617070726F766564'
