@@ -31,19 +31,38 @@ if [[ $? > 0 ]] ;then
         exit 1
 fi
 
-# Options: currently have implemented -v (verbose) and -q (quiet) options
-while getopts "vq" OPTION; do
+# Options
+while getopts "vqs:" OPTION; do
      case $OPTION in
      v)
-         verbose=1
-      shift
-         ;;
+      verbose=1
+      ;;
      q)
-         quiet=1
-      shift
-         ;;
+      quiet=1
+      ;;
+     s)
+      checkStates=${OPTARG}
+      for state in $checkStates
+      do
+          if [[ $(echo $state | egrep -v "(approved|needsReview|needsRevision|archived|rejected)" ) ]]
+          then
+                echo "State $state invalid! -s state options must be one or more of approved needsReview needsRevision archived rejected"
+                exit
+          fi
+      # Remove any duplicated states keeping the order - being over caution probably
+      # For the awk part see https://catonmat.net/awk-one-liners-explained-part-two
+      checkStates=$(echo $checkStates | tr ' ' '\n'  | awk '!a[$0]++' | tr '\n' ' ')
+
+      done
+      ;;
+     ?)
+     exit
+     ;;
      esac
  done
+
+# Final lsit of states to check, either from -s option or default to list of all valid states
+checkStates=${checkStates:="approved needsReview needsRevision archived rejected"}
 
 # Add text colours to make it easier to read the output.
 CLEAR=$'\e[0m'
@@ -54,10 +73,10 @@ ERROR=$'\e[41m'
 PROMPT=$'\e[44m'
 
 # Define prompt text colours & styles
-echoinfo()    { echo "${INFO}${1}${CLEAR}"   ;}
-echomessage() { echo "${MESSAGE}${1}${CLEAR}";}
-echowarn()    { echo "${WARN}${1}${CLEAR}"   ;}
-echoerror()   { echo "${ERROR}${1}${CLEAR}"  ;}
+echoinfo()    { echo "${INFO}${1}${CLEAR}"    | tee -a $log ;}
+echomessage() { echo "${MESSAGE}${1}${CLEAR}" | tee -a $log ;}
+echowarn()    { echo "${WARN}${1}${CLEAR}"    | tee -a $log ;}
+echoerror()   { echo "${ERROR}${1}${CLEAR}"   | tee -a $log ;}
 
 # Set p4 search ixtext attributes + hex encodings for review states as variables
 # for clarity when defining search queries later
@@ -74,21 +93,34 @@ approved_notPending=' (1308=617070726F766564 1310=30)'
 no='30'
 yes='31'
 
+# Define log file to save output to
+log=checkReviewStatesKeytoIndex-$(date +"%d-%m-%Y.%H.%M.%S")
+
+echo "#############################################################################################"
+echo "Output from this script run will be logged in $log"
+echo "#############################################################################################"
+
+echoinfo "$(date)"
+echoinfo "Script executed as: $0 $*"
+
+
 ###############################################################################
 # Loop over list of reviews from the index, one inner loop per state
 ###############################################################################
-for checkState in approved needsReview needsRevision archived rejected
+for checkState in $checkStates
 do
-        # Keep a count of how many indexes we checked for a status output at the end
+        # Keep a count of how many indexs we check for a status outptu at the end
         running_count=count_index_$checkState
 
-        echo -n "# Checking indexes for state=$checkState"
+        # Some feedback unless -q (quiet) option
+        if [[ -z $quiet ]]; then echoinfo "# Checking state=$checkState indexes" ;fi
+
 
         # Using bash variable indirection to expand ${!checkState} to specific search attribute variable defined above
         for reviewKeyName in $(p4 search "${!checkState}")
         do
             ((++running_count))
-            echo -n "."
+            # echo index counter for $checkState $running_count
 
                 # Calculate review id from key name to include in output for information (not needed in commands)
                 reviewHexKeyName=$(echo $reviewKeyName | cut -c14-21)
@@ -123,8 +155,7 @@ do
                         echomessage "# The following commands will correct the index entry"
                         echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
                 else
-                        # Verbose output if opted for
-                        if  [[ -n $verbose ]]; then echoinfo "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
+                        if  [[ -n $verbose ]]; then echo info "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
 
                 fi
         done
@@ -133,10 +164,12 @@ done
 
 
 # Output stats of number of records processed
-for checkState in approved needsReview needsRevision archived rejected
-do
-        summary_count=count_index_summary_$checkState
-        #echo -e "Number of $checkState indexes processed  ${!summary_count}"
-        printf '%-45s: %s\n' "Number of $checkState indexes processed "  "${!summary_count}"
+if [[ -z $quiet ]]; then
+    for checkState in $checkStates
+    do
+            summary_count=count_index_summary_$checkState
+            #echo -e "Number of $checkState indexes processed  ${!summary_count}"
+            printf '%-45s: %s\n' "Number of $checkState indexes processed "  "${!summary_count}" | tee -a $log
 
-done
+    done
+fi
