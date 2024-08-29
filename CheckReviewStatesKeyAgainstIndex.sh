@@ -1,4 +1,3 @@
-
 #!/usr/bin/bash
 
 # Reg Smith
@@ -61,6 +60,11 @@ while getopts "vqs:" OPTION; do
      esac
  done
 
+if [[ -n $verbose && -n $quiet ]]; then
+    echo "Options -v (verbose and -q (quiet) are mutually exclusive!"
+    exit
+fi
+
 # Final lsit of states to check, either from -s option or default to list of all valid states
 checkStates=${checkStates:="approved needsReview needsRevision archived rejected"}
 
@@ -120,7 +124,6 @@ do
         for reviewKeyName in $(p4 search "${!checkState}")
         do
             ((++running_count))
-            # echo index counter for $checkState $running_count
 
                 # Calculate review id from key name to include in output for information (not needed in commands)
                 reviewHexKeyName=$(echo $reviewKeyName | cut -c14-21)
@@ -155,7 +158,7 @@ do
                         echomessage "# The following commands will correct the index entry"
                         echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
                 else
-                        if  [[ -n $verbose ]]; then echo info "# OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
+                        if  [[ -n $verbose ]]; then echoinfo "#OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
 
                 fi
         done
