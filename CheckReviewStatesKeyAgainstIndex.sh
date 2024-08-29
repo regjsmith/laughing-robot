@@ -77,10 +77,18 @@ ERROR=$'\e[41m'
 PROMPT=$'\e[44m'
 
 # Define prompt text colours & styles
-echoinfo()    { echo "${INFO}${1}${CLEAR}"    | tee -a $log ;}
-echomessage() { echo "${MESSAGE}${1}${CLEAR}" | tee -a $log ;}
-echowarn()    { echo "${WARN}${1}${CLEAR}"    | tee -a $log ;}
-echoerror()   { echo "${ERROR}${1}${CLEAR}"   | tee -a $log ;}
+echoinfo()    { echo "${INFO}${1}${CLEAR}"    | tee -a $log ;} # White text
+echomessage() { echo "${MESSAGE}${1}${CLEAR}" | tee -a $log ;} # Green text
+echowarn()    { echo "${WARN}${1}${CLEAR}"    | tee -a $log ;} # Red text
+echoerror()   { echo "${ERROR}${1}${CLEAR}"   | tee -a $log ;} # Red block text
+
+
+echoinfo "echoinfo"
+echomessage "echomessage"
+echowarn "echowarm"
+echoerror "echoerror"
+
+exit
 
 # Set p4 search ixtext attributes + hex encodings for review states as variables
 # for clarity when defining search queries later
