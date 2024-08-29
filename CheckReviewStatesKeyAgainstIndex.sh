@@ -31,13 +31,17 @@ if [[ $? > 0 ]] ;then
 fi
 
 # Options
-while getopts "vqs:" OPTION; do
+while getopts "vqfs:" OPTION; do
      case $OPTION in
      v)
       verbose=1
       ;;
      q)
       quiet=1
+      ;;
+     f)
+      # -f to run the index commands rather then jsut print them to the teminal
+      fix=1
       ;;
      s)
       checkStates=${OPTARG}
@@ -137,11 +141,16 @@ do
                 then
                         echowarn "# No state found for key $reviewKeyName (review $reviewID)"
 
-                        # Print p4 index command to delete the index entry
-
-                        echomessage "# The following command will delete the $checkState index entry for $reviewKeyName"
-                        echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
-
+                        if [[ -n $fix ]]
+                        then
+                            echomessage "# Executing the following command to delete the $checkState index entry for $reviewKeyName"
+                            echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
+                            echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName
+                        else
+                            # Print p4 index command to delete the index entry
+                            echomessage "# The following command will delete the $checkState index entry for $reviewKeyName"
+                            echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
+                        fi
                         continue
                 fi
 
@@ -150,13 +159,20 @@ do
 
                         echowarn "# Key for review $reviewKeyName (review $reviewID) has state=$reviewKeyState, but index has $checkState"
 
-                        # Print p4 index command to delete the index entry
-                        echomessage "# The following command will delete the index entry"
-                        echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
-
-                        # Print p4 index command to correct the index entry
-                        echomessage "# The following commands will correct the index entry"
-                        echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
+                        if [[ -n $fix ]]
+                        then
+                            # Execute p4 index commands to delete & correct the index entries
+                            echomessage "# Executing the following commands to delete & correct the index entries"
+                            echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
+                            echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
+                            echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName
+                            echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName
+                        else
+                            # Print  p4 index commands to delete & correct the index entries
+                            echomessage "# The following commands will delete & correct the index entries"
+                            echomessage "echo ${!checkState} | p4 index -a 1308 -d $reviewKeyName"
+                            echomessage "echo ${!reviewKeyState} | p4 index -a 1308 $reviewKeyName"
+                        fi
                 else
                         if  [[ -n $verbose ]]; then echoinfo "#OK, review key $reviewKeyName (review $reviewID) state $reviewKeyState matches in key and index" ;fi
 
