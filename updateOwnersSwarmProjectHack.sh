@@ -7,7 +7,7 @@ for projectId in $(p4 -Ztag -F %value% keys -e "swarm-project-*" | jq  -r 'if .d
 
                 echo "# Checking owners in project key for project id $projectId"
 
-                for user in $(p4 keys -e $projectKey | cut -d= -f2- | jq -r '.owners.[]')
+                for user in $(p4 keys -e $projectKey | cut -d= -f2- | jq -r '.owners[]')
                 do
                         if p4 user -o --exists $user > /dev/null 2>&1; then
                         echo "#   OK $user exists in Perforce"
