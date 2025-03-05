@@ -17,7 +17,7 @@ if [[ $? > 0 ]] ;then
 	exit 1
 fi
 
-# Function to tidy up the P4V.json file we downloa
+# Function to tidy up the P4V.json file we download
 cleanP4V.json(){
     if [ -e P4V.json ]; then
        rm P4V.json
