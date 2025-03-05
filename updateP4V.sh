@@ -96,7 +96,7 @@ fi
 
 if [ -f ./p4v.tgz ]; then
     localtarVersion=$(tar -ztf p4v.tgz 2>/dev/null | head -1 | sed 's#/$##' | cut -d- -f2-)
-    echo "Found p4v.tgz in current directory for P4V version $localtarVersion, using that for install"
+    echo "Found p4v.tgz in current directory for P4V version $localtarVersion, using that for install. Delete this file to have this script check the downloads site instead"
 
     if [ "$localtarVersion" = "$installedVersion" ]; then
         echo "Local p4v.tgz version matches currently installed P4V $installedVersion ... exiting"
