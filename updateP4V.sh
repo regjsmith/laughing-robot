@@ -1,3 +1,7 @@
+#!/usr/bin/bash
+
+# Download and update Linux p4v
+
 # Reg Smith
 
 now=$(date)
@@ -13,13 +17,20 @@ if [[ $? > 0 ]] ;then
 	exit 1
 fi
 
-# Fetch list of availble versions that can be dpwnloaded in local file
+# Function to tidy up the P4V.json file we downloa
+cleanP4V.json(){
+    if [ -e P4V.json ]; then
+       rm P4V.json
+    fi
+}
+# Fetch list of availble versions that can be downloaded in local file
 
 echo "Fetching list of available versions https://updates.perforce.com/static/P4V/P4V.json"
 curl -qs https://updates.perforce.com/static/P4V/P4V.json | jq  -r '.versions[] | select(.platform=="linux26x86_64")| .major+"."+.minor+"."+.build' > P4V.json
 
 if [ $? -ne 0 ]; then
     echo Download of https://updates.perforce.com/static/P4V/P4V.json failed
+    cleanP4V.json
     exit 1
 fi
 
@@ -57,6 +68,7 @@ if [[ "$#" -ne 1 ]] || ! [[ "$1" =~ [1-9][0-9]\.[1-9]|latest ]] ; then
     #2) 2017.1.1491634    5) 2018.1.1637591   8) 2018.4.1753667  11) 2020.1.1966006  14) 2021.1.2125979  17) 2021.4.2263543  20) 2022.3.2408367  23) 2023.3.2495381  26) 2024.2.2619912
     #3) 2017.2.1573260    6) 2018.2.1687764   9) 2019.1.1865170  12) 2020.2.2028073  15) 2021.2.2138880  18) 2022.1.2286077  21) 2023.1.2431464  24) 2023.4.2558838
 
+    cleanP4V.json
 
     exit
 else
@@ -71,13 +83,12 @@ else
         if [ ${#longVersion} -eq 0 ]; then 
             echo "$shortVersion not availble, available versions are"
             cat P4V.json | cut -d. -f1-2 | sed 's/^..//'
+            cleanP4V.json
             exit
         fi
     fi
 fi
 
-# testing code thus far
-#exit
 
 # Run a command using sudo so it only asks for password at the start and won't 
 # ask again while rest of script runs, default for sudo is to store password for 15 minutes
@@ -100,6 +111,7 @@ if [ -f ./p4v.tgz ]; then
 
     if [ "$localtarVersion" = "$installedVersion" ]; then
         echo "Local p4v.tgz version matches currently installed P4V $installedVersion ... exiting"
+        cleanP4V.json
         exit
     fi
 else
@@ -113,6 +125,7 @@ else
 
     if [[ "$downloadableVersion" = "$installedVersion" ]]; then
         echo "Downloadable version P4V $downloadableVersion matches currently installed version ...exiting"
+        cleanP4V.json
         exit
     fi
 
