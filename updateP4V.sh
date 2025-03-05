@@ -92,7 +92,7 @@ fi
 
 if [ -f ./p4v.tgz ]; then
     localtarVersion=$(tar -ztf p4v.tgz 2>/dev/null | head -1 | sed 's#/$##' | cut -d- -f2-)
-    echo "Found p4v.tgz in current directory for P4V version $localtarVersion, using that for install. If you do not want this to use this local file please delete it"
+    echo "Found p4v.tgz in current directory for P4V version $localtarVersion, using that for install"
 
     if [ "$localtarVersion" = "$installedVersion" ]; then
         echo "Local p4v.tgz version matches currently installed P4V $installedVersion ... exiting"
@@ -150,4 +150,9 @@ sudo ln -s /opt/perforce/bin/p4v/bin/p4v /usr/local/bin/p4v
 
 echo Created link /opt/perforce/bin/p4v/bin/p4v to /usr/local/bin/p4v
 echo Updated P4V to following version:
-p4v -V
+
+# Running with sudo to get round following errors when first running p4v
+# ln: failed to create symbolic link '/opt/perforce/bin/p4v/lib/libssl.so': Permission denied
+# ln: failed to create symbolic link '/opt/perforce/bin/p4v/lib/libcrypto.so': Permission denied
+
+sudo p4v -V
