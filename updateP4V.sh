@@ -1,13 +1,17 @@
-#!/usr/bin/bash
-
-# Download and update Linux p4v
-
 # Reg Smith
 
 now=$(date)
 
 # Set pipefil so we know if any of the commands in a set of piped commands exits with non-zero status
 set -o pipefail
+
+# Prerequisite is the jq json command line processor
+# https://jqlang.github.io/jq/
+$(which jq 2>&1>/dev/null) 
+if [[ $? > 0 ]] ;then
+       	echo "Please install [jq](https://jqlang.github.io/jq/) first." 
+	exit 1
+fi
 
 # Fetch list of availble versions that can be dpwnloaded in local file
 
